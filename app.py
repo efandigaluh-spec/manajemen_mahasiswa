@@ -5,19 +5,17 @@ import re
 import time
 import csv
 import json
+import os
 
 app = Flask(__name__)
 app.secret_key = 'secret123'
-
-# IDENTITAS APLIKASI
-APP_NAME = "Efandi"
-APP_ID = "241011450231"
 
 # DATABASE
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mahasiswa.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+
 
 # MODEL
 class Mahasiswa(db.Model):
@@ -27,8 +25,21 @@ class Mahasiswa(db.Model):
     jurusan = db.Column(db.String(100), nullable=False)
 
 
-# HOME (SUDAH DIGANTI ALAMATNYA)
-@app.route('/efandi-241011450231')
+# BUBBLE SORT
+def bubble_sort(data):
+    data = list(data)
+    n = len(data)
+
+    for i in range(n):
+        for j in range(0, n - i - 1):
+            if data[j].nim > data[j + 1].nim:
+                data[j], data[j + 1] = data[j + 1], data[j]
+
+    return data
+
+
+# HOME
+@app.route('/')
 def home():
     data_mahasiswa = Mahasiswa.query.all()
     total = Mahasiswa.query.count()
@@ -37,9 +48,7 @@ def home():
         'index.html',
         mahasiswa=data_mahasiswa,
         waktu=0,
-        total=total,
-        app_name=APP_NAME,
-        app_id=APP_ID
+        total=total
     )
 
 
@@ -53,15 +62,13 @@ def tambah():
 
         if not re.match(r'^[0-9]+$', nim):
             flash('NIM hanya boleh angka')
-            return redirect('/efandi-241011450231')
+            return redirect('/')
 
-        cek = Mahasiswa.query.filter_by(nim=nim).first()
-        if cek:
+        if Mahasiswa.query.filter_by(nim=nim).first():
             flash('NIM sudah terdaftar')
-            return redirect('/efandi-241011450231')
+            return redirect('/')
 
-        mahasiswa_baru = Mahasiswa(nim=nim, nama=nama, jurusan=jurusan)
-        db.session.add(mahasiswa_baru)
+        db.session.add(Mahasiswa(nim=nim, nama=nama, jurusan=jurusan))
         db.session.commit()
 
         flash('Data berhasil ditambahkan')
@@ -69,7 +76,7 @@ def tambah():
     except:
         flash('Terjadi kesalahan')
 
-    return redirect('/efandi-241011450231')
+    return redirect('/')
 
 
 # HAPUS
@@ -80,20 +87,14 @@ def hapus(id):
     db.session.commit()
 
     flash('Data berhasil dihapus')
-    return redirect('/efandi-241011450231')
+    return redirect('/')
 
 
 # EDIT
 @app.route('/edit/<int:id>')
 def edit(id):
     mahasiswa = Mahasiswa.query.get_or_404(id)
-
-    return render_template(
-        'edit.html',
-        mahasiswa=mahasiswa,
-        app_name=APP_NAME,
-        app_id=APP_ID
-    )
+    return render_template('edit.html', mahasiswa=mahasiswa)
 
 
 # UPDATE
@@ -112,7 +113,7 @@ def update(id):
     except:
         flash('Gagal update data')
 
-    return redirect('/efandi-241011450231')
+    return redirect('/')
 
 
 # SEARCH
@@ -128,16 +129,11 @@ def search():
 
     end = time.perf_counter()
 
-    waktu = end - start
-    total = Mahasiswa.query.count()
-
     return render_template(
         'index.html',
         mahasiswa=data,
-        waktu=waktu,
-        total=total,
-        app_name=APP_NAME,
-        app_id=APP_ID
+        waktu=end - start,
+        total=len(data)
     )
 
 
@@ -145,18 +141,15 @@ def search():
 @app.route('/sort')
 def sort():
     data = Mahasiswa.query.all()
+    sorted_data = bubble_sort(data)
 
-    sorted_data = sorted(data, key=lambda x: x.nim)
-
-    flash('Data berhasil diurutkan')
+    flash('Bubble Sort berhasil (O(n²))')
 
     return render_template(
         'index.html',
         mahasiswa=sorted_data,
         waktu=0,
-        total=len(sorted_data),
-        app_name=APP_NAME,
-        app_id=APP_ID
+        total=len(sorted_data)
     )
 
 
@@ -165,13 +158,10 @@ def sort():
 def export_csv():
     data = Mahasiswa.query.all()
 
-    hasil = []
-    for m in data:
-        hasil.append({
-            'nim': m.nim,
-            'nama': m.nama,
-            'jurusan': m.jurusan
-        })
+    hasil = [
+        {'nim': m.nim, 'nama': m.nama, 'jurusan': m.jurusan}
+        for m in data
+    ]
 
     df = pd.DataFrame(hasil)
     file_name = 'mahasiswa.csv'
@@ -185,13 +175,10 @@ def export_csv():
 def export_json():
     data = Mahasiswa.query.all()
 
-    hasil = []
-    for m in data:
-        hasil.append({
-            'nim': m.nim,
-            'nama': m.nama,
-            'jurusan': m.jurusan
-        })
+    hasil = [
+        {'nim': m.nim, 'nama': m.nama, 'jurusan': m.jurusan}
+        for m in data
+    ]
 
     file_name = 'mahasiswa.json'
 
@@ -227,12 +214,13 @@ def import_csv():
     except:
         flash('Format CSV salah')
 
-    return redirect('/efandi-241011450231')
+    return redirect('/')
 
 
-# RUN
+# RUN (WAJIB UNTUK RENDER)
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
 
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
