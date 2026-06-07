@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <title>Manajemen Mahasiswa</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+
+        body{
+            background: linear-gradient(to right, #1e3c72, #2a5298);
+        }
+
+        .card{
+            transition: 0.3s;
+            border-radius: 15px;
+        }
+
+        .card:hover{
+            transform: scale(1.01);
+        }
+
+        table tr:hover{
+            background-color: #f2f2f2;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+
+<nav class="navbar navbar-dark bg-dark shadow-lg">
+
+    <div class="container-fluid">
+
+        <span class="navbar-brand mb-0 h1">
+
+            🎓 Sistem Manajemen Mahasiswa
+
+        </span>
+
+    </div>
+
+</nav>
+
+<div class="container mt-5">
+
+    <!-- ALERT -->
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+
+            {% for message in messages %}
+
+                <div class="alert alert-info shadow">
+                    {{ message }}
+                </div>
+
+            {% endfor %}
+
+        {% endif %}
+    {% endwith %}
+
+    <!-- STATISTIK -->
+
+    <div class="row mb-4">
+
+        <div class="col-md-4">
+
+            <div class="card bg-primary text-white shadow">
+
+                <div class="card-body">
+
+                    <h5>Total Mahasiswa</h5>
+
+                    <h1>{{ total }}</h1>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-4">
+
+            <div class="card bg-success text-white shadow">
+
+                <div class="card-body">
+
+                    <h5>Search Complexity</h5>
+
+                    <h1>O(n)</h1>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-4">
+
+            <div class="card bg-warning text-dark shadow">
+
+                <div class="card-body">
+
+                    <h5>Sorting</h5>
+
+                    <h1>Bubble</h1>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- CARD -->
+
+    <div class="card shadow">
+
+        <div class="card-header bg-dark text-white">
+
+            <h3>
+
+                <i class="bi bi-database"></i>
+                Data Mahasiswa
+
+            </h3>
+
+        </div>
+
+        <div class="card-body">
+
+            <!-- FORM TAMBAH -->
+
+            <form action="/tambah" method="POST">
+
+                <div class="mb-3">
+
+                    <input type="text"
+                           name="nim"
+                           class="form-control"
+                           placeholder="Masukkan NIM">
+
+                </div>
+
+                <div class="mb-3">
+
+                    <input type="text"
+                           name="nama"
+                           class="form-control"
+                           placeholder="Masukkan Nama">
+
+                </div>
+
+                <div class="mb-3">
+
+                    <input type="text"
+                           name="jurusan"
+                           class="form-control"
+                           placeholder="Masukkan Jurusan">
+
+                </div>
+
+                <button type="submit"
+                        class="btn btn-success">
+
+                    <i class="bi bi-plus-circle"></i>
+                    Tambah Mahasiswa
+
+                </button>
+
+            </form>
+
+            <hr>
+
+            <!-- SEARCH -->
+
+            <form action="/search">
+
+                <div class="input-group">
+
+                    <input type="text"
+                           name="keyword"
+                           class="form-control"
+                           placeholder="Cari Nama Mahasiswa">
+
+                    <button class="btn btn-primary">
+
+                        <i class="bi bi-search"></i>
+                        Cari
+
+                    </button>
+
+                </div>
+
+            </form>
+
+            <br>
+
+            <!-- BUTTON -->
+
+            <a href="/sort"
+               class="btn btn-warning">
+
+                <i class="bi bi-sort-alpha-down"></i>
+                Bubble Sort
+
+            </a>
+
+            <a href="/export/csv"
+               class="btn btn-success">
+
+                <i class="bi bi-file-earmark-excel"></i>
+                Export CSV
+
+            </a>
+
+            <a href="/export/json"
+               class="btn btn-info">
+
+                <i class="bi bi-filetype-json"></i>
+                Export JSON
+
+            </a>
+
+            <br><br>
+
+            <!-- IMPORT -->
+
+            <form action="/import"
+                  method="POST"
+                  enctype="multipart/form-data">
+
+                <input type="file"
+                       name="file">
+
+                <button class="btn btn-secondary">
+
+                    <i class="bi bi-upload"></i>
+                    Import CSV
+
+                </button>
+
+            </form>
+
+            <br>
+
+            <!-- WAKTU SEARCH -->
+
+            <div class="alert alert-secondary shadow">
+
+                <strong>Waktu Pencarian:</strong>
+                {{ waktu }} detik
+
+                <br>
+
+                <strong>Sequential Search Complexity:</strong>
+                O(n)
+
+            </div>
+
+            <!-- TABLE -->
+
+            <table class="table table-bordered table-hover">
+
+                <tr class="table-dark">
+
+                    <th>NIM</th>
+                    <th>Nama</th>
+                    <th>Jurusan</th>
+                    <th>Aksi</th>
+
+                </tr>
+
+                {% for mhs in mahasiswa %}
+
+                <tr>
+
+                    <td>{{ mhs.nim }}</td>
+                    <td>{{ mhs.nama }}</td>
+                    <td>{{ mhs.jurusan }}</td>
+
+                    <td>
+
+                        <a href="/edit/{{ mhs.id }}"
+                           class="btn btn-warning btn-sm">
+
+                           <i class="bi bi-pencil-square"></i>
+                           Edit
+
+                        </a>
+
+                        <a href="/hapus/{{ mhs.id }}"
+                           class="btn btn-danger btn-sm">
+
+                           <i class="bi bi-trash"></i>
+                           Hapus
+
+                        </a>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </table>
+
+        </div>
+
+    </div>
+
+    <!-- FOOTER -->
+
+    <footer class="text-center text-white mt-4 mb-3">
+
+        <hr>
+
+        <p>
+            🎓 Project UAS Pemrograman Web © 2026
+        </p>
+
+    </footer>
+
+</div>
+
+</body>
+</html>
+```
